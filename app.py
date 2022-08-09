@@ -67,6 +67,8 @@ def createVM(sessionID,NameVM):
     response = requests.post('https://102.164.112.135/api/vcenter/vm', headers=headers, json=json_data,verify=False).content
     vmcreate=json.loads(response)
     return vmcreate
+
+#Delete VM Function
 #Takes NameVM = VM ID i.e : "vm-1046"
 def deleteVM(sessionID,NameVM):
     uridelete='https://102.164.112.135/api/vcenter/vm/'+NameVM
@@ -96,6 +98,7 @@ def hosts():
 def vm():
     name=request.args.get('Name')
     return jsonify(createVM(sessionID,name))
+#DELETE VM : DELETE
 #Add query parameter in request url i.e : http://127.0.0.1:5000/delete?ID=Testing
 @app.route('/delete', methods = ['DELETE'])
 def delete():
