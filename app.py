@@ -100,7 +100,13 @@ def deleteVM(APIKEY,NameVM):
     print(delete.content)
     return(delete.status_code)
 
-
+def generate_token(old_token):
+    #Clean up old token, Unecessary for now, token deletion is automatic upon creation of new token
+    #uridelete='https://102.164.112.135/api/session'
+    #headers = {'vmware-api-session-id': ''+old_token+''}
+    #delete = requests.delete(uridelete,verify=False,headers=headers)
+    #print(delete.status_code)
+    authenticate()
 
 #how to run flask application/api:
 #>pip install Flask
@@ -117,7 +123,7 @@ def vms():
     #print(sessionID)
     if(get_statuscode_test(os.environ['VCENTER_CURRENT_SESSION'])==401):
         print ("InvalidORExpired Session Token, Generating New Token")
-        authenticate()
+        generate_token(os.environ['VCENTER_CURRENT_SESSION'])
         return jsonify(getVMs(os.environ['VCENTER_CURRENT_SESSION']))
     else:
         return jsonify(getVMs(os.environ['VCENTER_CURRENT_SESSION']))
