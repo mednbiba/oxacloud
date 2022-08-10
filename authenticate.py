@@ -8,4 +8,3 @@ def createSession():
     sessionRequest = requests.post(uri,verify=False, auth=('stage@vsphere.local', 'djZ82L-28+qZKJJ'))
     return(str(sessionRequest.text).strip('\"'))
 
-print(createSession())
