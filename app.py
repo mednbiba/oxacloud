@@ -69,7 +69,7 @@ def createVM(APIKEY,NameVM):
         'hot_remove_enabled': False,
     },
     
-    'guest_OS': 'DOS',
+    'guest_OS': 'UBUNTU_64',
     'memory': {
         'hot_add_enabled': False,
         'size_MiB': 500,
@@ -91,6 +91,18 @@ def createVM(APIKEY,NameVM):
     vmcreate=json.loads(response.content)
     return vmcreate
 
+
+def cloneVM(APIKEY,SourceVM,DestinationVM):
+    uricreatevm='https://102.164.112.135/api/vcenter/vm?action=clone'
+    headers = {'vmware-api-session-id': ''+APIKEY+''}
+    json_data = {
+	"name": DestinationVM,
+	"source": SourceVM
+                }
+    clone = requests.post(uricreatevm, headers=headers, json=json_data,verify=False)
+    vmcreate=json.loads(clone.content)
+    return SourceVM+" Has Been Cloned into "+DestinationVM+"==> ID = "+vmcreate
+
 #Delete VM Function
 #Takes NameVM = VM ID i.e : "vm-1046"
 def deleteVM(APIKEY,NameVM):
@@ -100,6 +112,43 @@ def deleteVM(APIKEY,NameVM):
     print(delete.content)
     return(delete.status_code)
 
+#Get Power Function
+#Takes NameVM = VM ID i.e : "vm-1046"
+def getpower(APIKEY,NameVM):
+    uri ='https://102.164.112.135/api/vcenter/vm/'+NameVM+'/power'
+    headers = {'vmware-api-session-id': ''+APIKEY+''}
+    get=requests.get(uri,verify=False,headers=headers)
+    status=json.loads(get.text)
+    return status
+#POWER ON
+def stoppower(APIKEY,NameVM):
+    uri ='https://102.164.112.135/api/vcenter/vm/'+NameVM+'/power?action=stop'
+    headers = {'vmware-api-session-id': ''+APIKEY+''}
+    stop=requests.post(uri,verify=False,headers=headers)
+    if(stop.status_code!=204):
+        return json.loads(stop.content)
+    else:
+        return('VM :'+NameVM+' Has been powered OFF')
+
+#POWER OFF
+def startpower(APIKEY,NameVM):
+    uri ='https://102.164.112.135/api/vcenter/vm/'+NameVM+'/power?action=start'
+    headers = {'vmware-api-session-id': ''+APIKEY+''}
+    stop=requests.post(uri,verify=False,headers=headers)
+    if(stop.status_code!=204):
+        return json.loads(stop.content)
+    else:
+        return('VM :'+NameVM+' Has been powered ON')
+
+def suspendpower(APIKEY,NameVM):
+    uri ='https://102.164.112.135/api/vcenter/vm/'+NameVM+'/power?action=suspend'
+    headers = {'vmware-api-session-id': ''+APIKEY+''}
+    stop=requests.post(uri,verify=False,headers=headers)
+    if(stop.status_code!=204):
+        return json.loads(stop.content)
+    else:
+        return('VM :'+NameVM+' Has been SUSPENDED')
+#Unused
 def generate_token(old_token):
     #Clean up old token, Unecessary for now, token deletion is automatic upon creation of new token
     #uridelete='https://102.164.112.135/api/session'
@@ -116,6 +165,11 @@ def generate_token(old_token):
 session=authenticate()
 #print(getVM(os.environ['VCENTER_CURRENT_SESSION']))
 app = Flask(__name__)
+
+
+
+
+
 #Lists VMS : GET request ==>http://127.0.0.1:5000/vm
 @app.route('/vms', methods = ['GET'])
 def vms():
@@ -128,10 +182,22 @@ def vms():
     else:
         return jsonify(getVMs(os.environ['VCENTER_CURRENT_SESSION']))
 
+
+
+
 #Lists Hosts : GET request ==>http://127.0.0.1:5000/vm
 @app.route('/hosts', methods = ['GET'])
 def hosts():
-    return jsonify(getHosts(os.environ['VCENTER_CURRENT_SESSION']))
+    if(get_statuscode_test(os.environ['VCENTER_CURRENT_SESSION'])==401):
+        print ("InvalidORExpired Session Token, Generating New Token")
+        generate_token(os.environ['VCENTER_CURRENT_SESSION'])
+        return jsonify(getHosts(os.environ['VCENTER_CURRENT_SESSION']))
+    else:
+        return jsonify(getHosts(os.environ['VCENTER_CURRENT_SESSION']))
+
+
+
+
 
 #CREATE VM : POST 
 #Add query parameter in request url i.e : http://127.0.0.1:5000/vm?Name=Testing
@@ -139,17 +205,81 @@ def hosts():
 def vm():
     name=request.args.get('Name')
     return jsonify(createVM(os.environ['VCENTER_CURRENT_SESSION'],name))
+
+
+
 #DELETE VM : DELETE
 #Add query parameter in request url i.e : http://127.0.0.1:5000/delete?ID=Testing
 @app.route('/delete', methods = ['DELETE'])
 def delete():
     name=request.args.get('ID')
-    return jsonify(deleteVM(os.environ['VCENTER_CURRENT_SESSION'],name))
+    if(get_statuscode_test(os.environ['VCENTER_CURRENT_SESSION'])==401):
+        print ("InvalidORExpired Session Token, Generating New Token")
+        generate_token(os.environ['VCENTER_CURRENT_SESSION'])
+        return jsonify(deleteVM(os.environ['VCENTER_CURRENT_SESSION'],name))
+    else:
+        return jsonify(deleteVM(os.environ['VCENTER_CURRENT_SESSION'],name))
+
+#GET VM POWER : GET
+
+@app.route('/powerstatus', methods =['GET'])
+def power():
+    name = request.args.get('ID')
+    
+    if(get_statuscode_test(os.environ['VCENTER_CURRENT_SESSION'])==401):
+        print ("InvalidORExpired Session Token, Generating New Token")
+        generate_token(os.environ['VCENTER_CURRENT_SESSION'])
+        return jsonify(getpower(os.environ['VCENTER_CURRENT_SESSION'],name))
+    else:
+        return jsonify(getpower(os.environ['VCENTER_CURRENT_SESSION'],name))
+
+
+@app.route('/poweroff',methods=['POST'])
+def poweroff():
+    name = request.args.get('ID')
+    if(get_statuscode_test(os.environ['VCENTER_CURRENT_SESSION'])==401):
+        print ("InvalidORExpired Session Token, Generating New Token")
+        generate_token(os.environ['VCENTER_CURRENT_SESSION'])
+        return jsonify(stoppower(os.environ['VCENTER_CURRENT_SESSION'],name))
+    else:
+        return jsonify(stoppower(os.environ['VCENTER_CURRENT_SESSION'],name))
+
+        
+        
+@app.route('/clone',methods=['POST'])
+def clone():
+    source=request.args.get('source')
+    destionation=request.args.get('destination')
+    if(get_statuscode_test(os.environ['VCENTER_CURRENT_SESSION'])==401):
+        print ("InvalidORExpired Session Token, Generating New Token")
+        generate_token(os.environ['VCENTER_CURRENT_SESSION'])
+        return jsonify(cloneVM(os.environ['VCENTER_CURRENT_SESSION'],source,destionation))
+    else:
+        return jsonify(cloneVM(os.environ['VCENTER_CURRENT_SESSION'],source,destionation))
 
 
 
+@app.route('/poweron',methods=['POST'])
+def poweron():
+    name = request.args.get('ID')
+    if(get_statuscode_test(os.environ['VCENTER_CURRENT_SESSION'])==401):
+        print ("InvalidORExpired Session Token, Generating New Token")
+        generate_token(os.environ['VCENTER_CURRENT_SESSION'])
+        return jsonify(startpower(os.environ['VCENTER_CURRENT_SESSION'],name))
+    else:
+        return jsonify(startpower(os.environ['VCENTER_CURRENT_SESSION'],name))
 
 
+
+@app.route('/suspend',methods=['POST'])
+def suspend():
+    name = request.args.get('ID')
+    if(get_statuscode_test(os.environ['VCENTER_CURRENT_SESSION'])==401):
+        print ("InvalidORExpired Session Token, Generating New Token")
+        generate_token(os.environ['VCENTER_CURRENT_SESSION'])
+        return jsonify(suspendpower(os.environ['VCENTER_CURRENT_SESSION'],name))
+    else:
+        return jsonify(suspendpower(os.environ['VCENTER_CURRENT_SESSION'],name))
 
 
 
