@@ -25,6 +25,18 @@ def authenticate():
     dotenv.set_key(dotenv_file, "VCENTER_CURRENT_SESSION", os.environ["VCENTER_CURRENT_SESSION"])
     return(id)
 
+def checkUser(user,password):
+   dotenv_file = dotenv.find_dotenv()
+   dotenv.load_dotenv(dotenv_file) 
+   envuser=os.environ["VCENTER_USER"]
+   envpass=os.environ["VCENTER_PASS"]
+   print(envuser)
+   print(envpass)
+   if((user==envuser.strip())and(str(password)==str(envpass.strip()))):
+       return True
+   else:
+       return False
+
 
 
 def execute_getquery(uri,headers):
@@ -283,6 +295,16 @@ def suspend():
     else:
         return jsonify(suspendpower(os.environ['VCENTER_CURRENT_SESSION'],name))
 
+@app.route('/checkLogin',methods=['POST'])
+def checkLogin():
+    user = request.form['username']
+    password = request.form['password']
+    return jsonify(checkUser(user,password))
 
+
+
+
+if(__name__=='__main__'):
+    app.run(debug=True,host='0.0.0.0')
 
 
