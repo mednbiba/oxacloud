@@ -30,8 +30,9 @@ def checkUser(user,password):
    dotenv.load_dotenv(dotenv_file) 
    envuser=os.environ["VCENTER_USER"]
    envpass=os.environ["VCENTER_PASS"]
-   print(envuser)
-   print(envpass)
+   #must .strip() due to inv chars
+   #print(envuser)
+   #print(envpass)
    if((user==envuser.strip())and(str(password)==str(envpass.strip()))):
        return True
    else:
@@ -297,10 +298,11 @@ def suspend():
 
 @app.route('/checkLogin',methods=['POST'])
 def checkLogin():
-    user = request.form['username']
-    password = request.form['password']
-    return jsonify(checkUser(user,password))
-
+    data = request.data
+    j = json.loads(data)
+    username = j['username']
+    password =j['password']
+    return jsonify(checkUser(username,password))
 
 
 
